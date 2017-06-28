@@ -1,0 +1,7 @@
+[package]
+name = "wizards_xiii"
+version = "0.1.0"
+authors = ["Toby Smyth <tobs169@gmail.com>"]
+
+[dependencies]
+piston_window = "0.67.0"
