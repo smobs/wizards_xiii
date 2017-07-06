@@ -34,7 +34,6 @@ impl Component for Vel {
 }
 
 pub struct CollisionObjectData{
-    pub id: usize
 }
 
 impl Component for CollisionObjectData{

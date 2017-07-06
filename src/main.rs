@@ -12,7 +12,6 @@ mod systems;
 use systems::assorted::*;
 use systems::components::*;
 use systems::collision::*;
-use ncollide::world::{CollisionWorld};
 
 struct Game<'a> {
     world: World,
@@ -35,12 +34,12 @@ impl<'a> Game<'a> {
             .with(Pos { x: 1.0, y: 0.0 })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Player(1))
-            .with(CollisionObjectData{id:0});
+            .with(CollisionObjectData{});
         world.create_entity()
             .with(Pos { x: 100.0, y: 0.0 })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Player(2))
-            .with(CollisionObjectData{id:1});
+            .with(CollisionObjectData{});
 
         let dispatcher = DispatcherBuilder::new()
             .add(UpdateControlSystem, "ControlSystem", &[])
