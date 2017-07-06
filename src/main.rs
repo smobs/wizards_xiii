@@ -36,13 +36,13 @@ impl<'a> Game<'a> {
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Player(1))
             .with(Bounds::Rectangle(50.0,50.0))
-            .with(CollisionObjectData{});
+            .with(CollisionObjectData {});
         world.create_entity()
             .with(Pos { x: 100.0, y: 0.0 })
             .with(Vel { x: 0.0, y: 0.0 })
-            .with(Bounds::Rectangle(50.0,50.0))
+            .with(Bounds::Circle(25.0))
             .with(Player(2))
-            .with(CollisionObjectData{});
+            .with(CollisionObjectData {});
 
         let dispatcher = DispatcherBuilder::new()
             .add(UpdateControlSystem, "ControlSystem", &[])
@@ -78,14 +78,20 @@ impl<'a> Game<'a> {
         let pos = &self.world.read::<Pos>();
         let bounds = &self.world.read::<Bounds>();
         clear([0.5, 0.5, 0.5, 1.0], g);
-        for (pos, bounds) in (pos, bounds).join() {
+        for (pos, bounds) in (pos, bounds).join() { 
             match *bounds {
-                Bounds::Rectangle(x,y) => {
-                  rectangle([1.0, 0.0, 0.0, 0.7],
-                      [pos.x, pos.y, x, y],
-                      c.transform,
-                      g);
-
+                Bounds::Rectangle(x, y) => {
+                    rectangle([1.0, 0.0, 0.0, 0.7], [pos.x - (x / 2.0), pos.y -(y / 2.0), x, y], c.transform, g);
+                }
+                Bounds::Circle(r) => {
+                    rectangle([0.0, 1.0, 0.0, 0.7],
+                            [pos.x - r, pos.y - r, 2.0*r, 2.0*r],
+                            c.transform,
+                            g);
+                    ellipse([0.0, 0.0, 1.0, 0.7],
+                            [pos.x - r, pos.y - r, 2.0*r, 2.0*r],
+                            c.transform,
+                            g);
                 }
             }
         }
@@ -93,7 +99,8 @@ impl<'a> Game<'a> {
 }
 
 fn main() {
-    let mut window: PistonWindow = WindowSettings::new("Hello Piston!", [1400, 1000]).build().unwrap();
+    let mut window: PistonWindow =
+        WindowSettings::new("Hello Piston!", [700, 500]).build().unwrap();
 
     let mut game = Game::new();
 

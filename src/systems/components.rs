@@ -19,7 +19,8 @@ impl Component for Pos {
 
 
 pub enum Bounds {
-    Rectangle(f64, f64)
+    Rectangle(f64, f64),
+    Circle(f64)
 }
 
 impl Component for Bounds {

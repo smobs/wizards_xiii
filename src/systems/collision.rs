@@ -30,12 +30,12 @@ impl<'a> System<'a> for CollisionSystem {
                 world.deferred_set_position(id, p)
             } else {
                 let shape = match *bounds {
-                    Bounds::Rectangle(x,y) => Cuboid::new(Vector2::new(x/2.0, y/2.0))
+                    Bounds::Rectangle(x,y) => ShapeHandle::new(Cuboid::new(Vector2::new(x/2.0, y/2.0))),
+                    Bounds::Circle(r) => ShapeHandle::new(Ball::new(r))
                 };
-                let cuboid = ShapeHandle::new(shape);
                 world.deferred_add(id,
                                    p,
-                                   cuboid,
+                                   shape,
                                    CollisionGroups::new(),
                                    GeometricQueryType::Contacts(0.0),
                                    ());
