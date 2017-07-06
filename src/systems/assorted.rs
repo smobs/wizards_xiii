@@ -12,11 +12,11 @@ use std::collections::HashSet;
 pub struct UpdatePositionSystem;
 
 impl<'a> System<'a> for UpdatePositionSystem {
-    type SystemData = (WriteStorage<'a, Pos>, ReadStorage<'a, Vel>);
-    fn run(&mut self, (mut pos, vel): Self::SystemData) {
+    type SystemData = (WriteStorage<'a, Pos>, ReadStorage<'a, Vel>, Fetch<'a, Delta>);
+    fn run(&mut self, (mut pos, vel, delta): Self::SystemData) {
         for (pos, vel) in (&mut pos, &vel).join() {
-            pos.x += vel.x;
-            pos.y += vel.y;
+            pos.x += vel.x * delta.0;
+            pos.y += vel.y * delta.0;
         }
     }
 }
@@ -28,17 +28,18 @@ fn get_vel(pid: i32, buttons: &HashSet<Button>) -> Vel {
         2 => (Up, Down, Left, Right),
         _ => (W, S, A, D),
     };
+    let speed = 30.0;
     if buttons.contains(&Keyboard(up)) {
-        vel.y = -1.0;
+        vel.y = -speed;
     }
     if buttons.contains(&Keyboard(down)) {
-        vel.y = 1.0;
+        vel.y = speed;
     }
     if buttons.contains(&Keyboard(left)) {
-        vel.x = -1.0;
+        vel.x = -speed;
     }
     if buttons.contains(&Keyboard(right)) {
-        vel.x = 1.0;
+        vel.x = speed;
     }
     vel
 }
