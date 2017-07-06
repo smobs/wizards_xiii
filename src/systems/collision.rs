@@ -41,8 +41,10 @@ impl<'a> System<'a> for CollisionSystem {
                                    ());
             }
             world.update();
-            for (e1, e2, _) in world.contact_pairs(){
-                println!("{:?} hit {:?}", e1.uid, e2.uid);
+            for (e1, e2, ca) in world.contact_pairs(){
+                if (ca.num_contacts() > 0){
+                    println!("{:?} hit {:?}", e1.uid, e2.uid);
+                }
             }
         }
     }
