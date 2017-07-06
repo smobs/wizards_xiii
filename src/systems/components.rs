@@ -17,6 +17,15 @@ impl Component for Pos {
     type Storage = VecStorage<Self>;
 }
 
+
+pub enum Bounds {
+    Rectangle(f64, f64)
+}
+
+impl Component for Bounds {
+    type Storage = VecStorage<Self>;
+}
+
 pub struct Player(pub i32);
 impl Component for Player {
     type Storage = HashMapStorage<Self>;

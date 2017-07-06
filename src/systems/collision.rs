@@ -20,16 +20,19 @@ impl CollisionSystem {
 }
 
 impl<'a> System<'a> for CollisionSystem {
-    type SystemData = (Entities<'a>, WriteStorage<'a, Pos>, ReadStorage<'a, CollisionObjectData>);
-    fn run(&mut self, (ent, mut pos, col): Self::SystemData) {
+    type SystemData = (Entities<'a>, WriteStorage<'a, Pos>, ReadStorage<'a, CollisionObjectData>, ReadStorage<'a, Bounds>);
+    fn run(&mut self, (ent, mut pos, col, bounds): Self::SystemData) {
         let world = &mut self.0;
-        for (ent, pos, col) in (&*ent, &mut pos, &col).join() {
+        for (ent, pos, _, bounds) in (&*ent, &mut pos, &col, &bounds).join() {
             let id = ent.id() as usize;
             let p = Isometry2::new(Vector2::new(pos.x, pos.y), na::zero());
             if let Some(_) = world.collision_object(id) {
                 world.deferred_set_position(id, p)
             } else {
-                let cuboid = ShapeHandle::new(Cuboid::new(Vector2::new(50.0, 50.0)));
+                let shape = match *bounds {
+                    Bounds::Rectangle(x,y) => Cuboid::new(Vector2::new(x/2.0, y/2.0))
+                };
+                let cuboid = ShapeHandle::new(shape);
                 world.deferred_add(id,
                                    p,
                                    cuboid,

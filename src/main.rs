@@ -27,6 +27,7 @@ impl<'a> Game<'a> {
 
         world.register::<Pos>();
         world.register::<Vel>();
+        world.register::<Bounds>();
         world.register::<Player>();
         world.register::<CollisionObjectData>();
 
@@ -34,10 +35,12 @@ impl<'a> Game<'a> {
             .with(Pos { x: 1.0, y: 0.0 })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Player(1))
+            .with(Bounds::Rectangle(50.0,50.0))
             .with(CollisionObjectData{});
         world.create_entity()
             .with(Pos { x: 100.0, y: 0.0 })
             .with(Vel { x: 0.0, y: 0.0 })
+            .with(Bounds::Rectangle(50.0,50.0))
             .with(Player(2))
             .with(CollisionObjectData{});
 
@@ -73,12 +76,18 @@ impl<'a> Game<'a> {
     }
     fn render(&self, c: Context, g: &mut G2d) {
         let pos = &self.world.read::<Pos>();
+        let bounds = &self.world.read::<Bounds>();
         clear([0.5, 0.5, 0.5, 1.0], g);
-        for pos in pos.join() {
-            rectangle([1.0, 0.0, 0.0, 0.7],
-                      [pos.x, pos.y, 100.0, 100.0],
+        for (pos, bounds) in (pos, bounds).join() {
+            match *bounds {
+                Bounds::Rectangle(x,y) => {
+                  rectangle([1.0, 0.0, 0.0, 0.7],
+                      [pos.x, pos.y, x, y],
                       c.transform,
                       g);
+
+                }
+            }
         }
     }
 }
