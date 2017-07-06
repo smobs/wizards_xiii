@@ -84,10 +84,6 @@ impl<'a> Game<'a> {
                     rectangle([1.0, 0.0, 0.0, 0.7], [pos.x - (x / 2.0), pos.y -(y / 2.0), x, y], c.transform, g);
                 }
                 Bounds::Circle(r) => {
-                    rectangle([0.0, 1.0, 0.0, 0.7],
-                            [pos.x - r, pos.y - r, 2.0*r, 2.0*r],
-                            c.transform,
-                            g);
                     ellipse([0.0, 0.0, 1.0, 0.7],
                             [pos.x - r, pos.y - r, 2.0*r, 2.0*r],
                             c.transform,
