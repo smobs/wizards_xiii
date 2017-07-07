@@ -32,16 +32,22 @@ impl<'a> Game<'a> {
         world.register::<CollisionObjectData>();
 
         world.create_entity()
-            .with(Pos { x: 1.0, y: 0.0 })
+            .with(Pos { x: 50.0, y: 50.0 })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Player(1))
             .with(Bounds::Rectangle(50.0,50.0))
             .with(CollisionObjectData {});
         world.create_entity()
-            .with(Pos { x: 100.0, y: 0.0 })
+            .with(Pos { x: 100.0, y: 50.0 })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Bounds::Circle(25.0))
             .with(Player(2))
+            .with(CollisionObjectData {});
+        
+        world.create_entity()
+            .with(Pos { x: 200.0, y: 200.0 })
+            .with(Vel { x: 0.0, y: 0.0 })
+            .with(Bounds::Rectangle(100.0, 50.0))
             .with(CollisionObjectData {});
 
         let dispatcher = DispatcherBuilder::new()
