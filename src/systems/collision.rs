@@ -51,7 +51,8 @@ impl<'a> CollisionSystem {
     }
 
     fn basic_physics(&mut self,
-                     pos: &mut WriteStorage<'a, Pos>)
+                     pos: &mut WriteStorage<'a, Pos>,
+                     vel: &ReadStorage<'a, Vel>)
                      -> bool {
         let world = &mut self.0;
         let mut dirty = false;
@@ -62,17 +63,21 @@ impl<'a> CollisionSystem {
                 let mut move_vec = contact.normal * contact.depth * -0.5;
                 {
                     if let Some(p1) = pos.get_mut(e1.data) {
-                        dirty = true;
-                        p1.x += move_vec.x;
-                        p1.y += move_vec.y;
+                        if let Some(_) = vel.get(e1.data) {
+                            dirty = true;
+                            p1.x += move_vec.x;
+                            p1.y += move_vec.y;
+                        }
                     }
                 }
                 move_vec *= -1.0;
                 {
                     if let Some(p2) = pos.get_mut(e2.data) {
-                        dirty = true;
-                        p2.x += move_vec.x;
-                        p2.y += move_vec.y;
+                        if let Some(_) = vel.get(e2.data) {
+                            dirty = true;
+                            p2.x += move_vec.x;
+                            p2.y += move_vec.y;
+                        }
                     }
                 }
             }
@@ -86,8 +91,9 @@ impl<'a> System<'a> for CollisionSystem {
     type SystemData = (Entities<'a>,
      WriteStorage<'a, Pos>,
      ReadStorage<'a, CollisionObjectData>,
-     ReadStorage<'a, Bounds>);
-    fn run(&mut self, (ent, mut pos, col, bounds): Self::SystemData) {
+     ReadStorage<'a, Bounds>,
+     ReadStorage<'a, Vel>);
+    fn run(&mut self, (ent, mut pos, col, bounds, vel): Self::SystemData) {
         let mut dirty = true;
         let mut i = 0;
         while i < 10 && dirty {
@@ -95,7 +101,7 @@ impl<'a> System<'a> for CollisionSystem {
                 self.update_collisions(&ent, &pos, &col, &bounds);
             }
             {
-                dirty = self.basic_physics(&mut pos);
+                dirty = self.basic_physics(&mut pos, &vel);
             }
             i += 1;
         }

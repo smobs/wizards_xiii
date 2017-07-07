@@ -35,19 +35,31 @@ impl<'a> Game<'a> {
             .with(Pos { x: 50.0, y: 50.0 })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Player(1))
-            .with(Bounds::Rectangle(50.0,50.0))
+            .with(Bounds::Rectangle(50.0, 50.0))
             .with(CollisionObjectData {});
         world.create_entity()
-            .with(Pos { x: 100.0, y: 50.0 })
+            .with(Pos {
+                x: 100.0,
+                y: 50.0,
+            })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Bounds::Circle(25.0))
             .with(Player(2))
             .with(CollisionObjectData {});
-        
+
         world.create_entity()
-            .with(Pos { x: 200.0, y: 200.0 })
-            .with(Vel { x: 0.0, y: 0.0 })
-            .with(Bounds::Rectangle(100.0, 50.0))
+            .with(Pos {
+                x: 200.0,
+                y: 200.0,
+            })
+            .with(Bounds::Circle(125.0))
+            .with(CollisionObjectData {});
+        world.create_entity()
+            .with(Pos {
+                x: 300.0,
+                y: 300.0,
+            })
+            .with(Bounds::Rectangle(400.0, 25.0))
             .with(CollisionObjectData {});
 
         let dispatcher = DispatcherBuilder::new()
@@ -84,14 +96,17 @@ impl<'a> Game<'a> {
         let pos = &self.world.read::<Pos>();
         let bounds = &self.world.read::<Bounds>();
         clear([0.5, 0.5, 0.5, 1.0], g);
-        for (pos, bounds) in (pos, bounds).join() { 
+        for (pos, bounds) in (pos, bounds).join() {
             match *bounds {
                 Bounds::Rectangle(x, y) => {
-                    rectangle([1.0, 0.0, 0.0, 0.7], [pos.x - (x / 2.0), pos.y -(y / 2.0), x, y], c.transform, g);
+                    rectangle([1.0, 0.0, 0.0, 0.7],
+                              [pos.x - (x / 2.0), pos.y - (y / 2.0), x, y],
+                              c.transform,
+                              g);
                 }
                 Bounds::Circle(r) => {
                     ellipse([0.0, 0.0, 1.0, 0.7],
-                            [pos.x - r, pos.y - r, 2.0*r, 2.0*r],
+                            [pos.x - r, pos.y - r, 2.0 * r, 2.0 * r],
                             c.transform,
                             g);
                 }
