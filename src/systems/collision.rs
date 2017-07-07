@@ -2,7 +2,7 @@
 extern crate nalgebra;
 
 use specs::{Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecStorage, World,
-            WriteStorage, Join, Fetch, HashMapStorage, Entities};
+            WriteStorage, Join, Fetch, HashMapStorage, Entities, Entity};
 
 use ncollide::world::*;
 use ncollide::shape::*;
@@ -11,7 +11,7 @@ use self::nalgebra::{Vector2, Isometry2};
 use systems::components::*;
 use std;
 
-pub struct CollisionSystem(CollisionWorld2<f64, ()>);
+pub struct CollisionSystem(CollisionWorld2<f64, Entity>);
 
 impl CollisionSystem {
     pub fn new() -> Self {
@@ -44,17 +44,29 @@ impl<'a> System<'a> for CollisionSystem {
                                    shape,
                                    CollisionGroups::new(),
                                    GeometricQueryType::Contacts(0.0),
-                                   ());
+                                   ent);
             }
         }
         world.update();
         for (e1, e2, ca) in world.contact_pairs() {
             let mut contacts = std::vec::Vec::new();
             ca.contacts(&mut contacts);
-
             for contact in contacts {
-
-                println!("{:?} hit {:?}", e1.uid, e2.uid);
+                let mut move_vec = contact.normal * contact.depth * -0.5;
+                {
+                    if let Some(p1) = pos.get_mut(e1.data){
+                        p1.x += move_vec.x;
+                        p1.y += move_vec.y;
+                    }
+                }
+                move_vec *= -1.0;
+                {
+                    if let Some(p2) = pos.get_mut(e2.data){
+                        p2.x += move_vec.x;
+                        p2.y += move_vec.y;
+                    }
+                }
+                
             }
         }
     }
