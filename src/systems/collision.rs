@@ -9,6 +9,7 @@ use ncollide::shape::*;
 use self::nalgebra as na;
 use self::nalgebra::{Vector2, Isometry2};
 use systems::components::*;
+use std;
 
 pub struct CollisionSystem(CollisionWorld2<f64, ()>);
 
@@ -20,7 +21,10 @@ impl CollisionSystem {
 }
 
 impl<'a> System<'a> for CollisionSystem {
-    type SystemData = (Entities<'a>, WriteStorage<'a, Pos>, ReadStorage<'a, CollisionObjectData>, ReadStorage<'a, Bounds>);
+    type SystemData = (Entities<'a>,
+     WriteStorage<'a, Pos>,
+     ReadStorage<'a, CollisionObjectData>,
+     ReadStorage<'a, Bounds>);
     fn run(&mut self, (ent, mut pos, col, bounds): Self::SystemData) {
         let world = &mut self.0;
         for (ent, pos, _, bounds) in (&*ent, &mut pos, &col, &bounds).join() {
@@ -30,8 +34,10 @@ impl<'a> System<'a> for CollisionSystem {
                 world.deferred_set_position(id, p)
             } else {
                 let shape = match *bounds {
-                    Bounds::Rectangle(x,y) => ShapeHandle::new(Cuboid::new(Vector2::new(x/2.0, y/2.0))),
-                    Bounds::Circle(r) => ShapeHandle::new(Ball::new(r))
+                    Bounds::Rectangle(x, y) => {
+                        ShapeHandle::new(Cuboid::new(Vector2::new(x / 2.0, y / 2.0)))
+                    }
+                    Bounds::Circle(r) => ShapeHandle::new(Ball::new(r)),
                 };
                 world.deferred_add(id,
                                    p,
@@ -40,11 +46,15 @@ impl<'a> System<'a> for CollisionSystem {
                                    GeometricQueryType::Contacts(0.0),
                                    ());
             }
-            world.update();
-            for (e1, e2, ca) in world.contact_pairs(){
-                if ca.num_contacts() > 0{
-                    println!("{:?} hit {:?}", e1.uid, e2.uid);
-                }
+        }
+        world.update();
+        for (e1, e2, ca) in world.contact_pairs() {
+            let mut contacts = std::vec::Vec::new();
+            ca.contacts(&mut contacts);
+
+            for contact in contacts {
+
+                println!("{:?} hit {:?}", e1.uid, e2.uid);
             }
         }
     }
