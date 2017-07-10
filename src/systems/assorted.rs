@@ -28,7 +28,7 @@ fn get_vel(pid: i32, buttons: &HashSet<Button>) -> Vel {
         2 => (Up, Down, Left, Right),
         _ => (W, S, A, D),
     };
-    let speed = 30.0;
+    let speed = 50.0;
     if buttons.contains(&Keyboard(up)) {
         vel.y = -speed;
     }

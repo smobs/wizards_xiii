@@ -7,9 +7,11 @@ use specs::{Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecSt
 use ncollide::world::*;
 use ncollide::shape::*;
 use self::nalgebra as na;
-use self::nalgebra::{Vector2, Isometry2};
+use self::nalgebra::{Vector2, Isometry2, Point2};
 use systems::components::*;
 use std;
+use std::iter::*;
+use std::sync::Arc;
 
 pub struct CollisionSystem(CollisionWorld2<f64, Entity>);
 
@@ -27,7 +29,7 @@ impl<'a> CollisionSystem {
                          col: &ReadStorage<'a, CollisionObjectData>,
                          bounds: &ReadStorage<'a, Bounds>) {
         let world = &mut self.0;
-        for (ent, pos, _, bounds) in (&**ent, &*pos, &*col, &*bounds).join() {
+        for (ent, pos, col, bounds) in (&**ent, &*pos, &*col, &*bounds).join() {
             let id = ent.id() as usize;
             let p = Isometry2::new(Vector2::new(pos.x, pos.y), na::zero());
             if let Some(_) = world.collision_object(id) {
@@ -38,11 +40,18 @@ impl<'a> CollisionSystem {
                         ShapeHandle::new(Cuboid::new(Vector2::new(x / 2.0, y / 2.0)))
                     }
                     Bounds::Circle(r) => ShapeHandle::new(Ball::new(r)),
+                    Bounds::Polygon(ps) => {
+                        let max_index = ps.len();
+                        let points = Vec::from_iter(ps.into_iter().map(|p| Point2::new(p[0], p[1])));
+                        let indicies = Vec::from_iter((1..(max_index)).map(|p| Point2::new(p-1, p)).chain(once(Point2::new(max_index-1, 0))));
+                        ShapeHandle::new(Polyline::new(Arc::new(points), Arc::new(indicies), None, None))
+                    }
                 };
+                let mut cg = CollisionGroups::new();
                 world.deferred_add(id,
                                    p,
                                    shape,
-                                   CollisionGroups::new(),
+                                   cg,
                                    GeometricQueryType::Contacts(0.0),
                                    ent);
             }

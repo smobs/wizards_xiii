@@ -8,6 +8,8 @@ use specs::{DispatcherBuilder, Dispatcher, ReadStorage, System, VecStorage, Worl
             FetchMut, Join};
 use std::collections::HashSet;
 use std::ops::DerefMut;
+use std::iter::*;
+
 mod systems;
 use systems::assorted::*;
 use systems::components::*;
@@ -18,7 +20,16 @@ struct Game<'a> {
     // TODO: are these lifetimes right?
     dispatcher: Dispatcher<'a, 'a>,
 }
-
+fn create_terrain(world : &mut World){
+            static poly : [[f64; 2]; 6] = [[0.0,0.0], [0.0, 200.0], [50.0, 50.0], [200.0, 0.0], [100.0, 0.0], [0.0, -300.0]];
+            world.create_entity()
+            .with(Pos {
+                x: 0.0,
+                y: 300.0,
+            })
+            .with(Bounds::Polygon(&poly))
+            .with(CollisionObjectData {group_id: 3});
+}
 impl<'a> Game<'a> {
     fn new() -> Game<'a> {
         let mut world = World::new();
@@ -32,36 +43,22 @@ impl<'a> Game<'a> {
         world.register::<CollisionObjectData>();
 
         world.create_entity()
-            .with(Pos { x: 50.0, y: 50.0 })
+            .with(Pos { x: 350.0, y: 100.0 })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Player(1))
             .with(Bounds::Rectangle(50.0, 50.0))
-            .with(CollisionObjectData {});
+            .with(CollisionObjectData {group_id: 1});
         world.create_entity()
             .with(Pos {
-                x: 100.0,
+                x: 400.0,
                 y: 50.0,
             })
             .with(Vel { x: 0.0, y: 0.0 })
             .with(Bounds::Circle(25.0))
             .with(Player(2))
-            .with(CollisionObjectData {});
+            .with(CollisionObjectData {group_id: 2});
 
-        world.create_entity()
-            .with(Pos {
-                x: 200.0,
-                y: 200.0,
-            })
-            .with(Bounds::Circle(125.0))
-            .with(CollisionObjectData {});
-        world.create_entity()
-            .with(Pos {
-                x: 300.0,
-                y: 300.0,
-            })
-            .with(Bounds::Rectangle(400.0, 25.0))
-            .with(CollisionObjectData {});
-
+        create_terrain(&mut world);
         let dispatcher = DispatcherBuilder::new()
             .add(UpdateControlSystem, "ControlSystem", &[])
             .add(UpdatePositionSystem,
@@ -99,16 +96,21 @@ impl<'a> Game<'a> {
         for (pos, bounds) in (pos, bounds).join() {
             match *bounds {
                 Bounds::Rectangle(x, y) => {
-                    rectangle([1.0, 0.0, 0.0, 0.7],
+                    rectangle([1.0, 0.0, 0.0, 1.0],
                               [pos.x - (x / 2.0), pos.y - (y / 2.0), x, y],
                               c.transform,
                               g);
                 }
                 Bounds::Circle(r) => {
-                    ellipse([0.0, 0.0, 1.0, 0.7],
+                    ellipse([0.0, 0.0, 1.0, 1.0],
                             [pos.x - r, pos.y - r, 2.0 * r, 2.0 * r],
                             c.transform,
                             g);
+                }
+                Bounds::Polygon(ps) => {
+                    let ps = Vec::from_iter(ps.into_iter().map(|p| [p[0] + pos.x, p[1] + pos.y]));
+
+                    polygon([0.0, 1.0, 0.0, 0.5], &ps, c.transform, g)
                 }
             }
         }

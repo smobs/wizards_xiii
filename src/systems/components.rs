@@ -20,7 +20,8 @@ impl Component for Pos {
 
 pub enum Bounds {
     Rectangle(f64, f64),
-    Circle(f64)
+    Circle(f64),
+    Polygon(&'static[[f64; 2]]),
 }
 
 impl Component for Bounds {
@@ -44,6 +45,7 @@ impl Component for Vel {
 }
 
 pub struct CollisionObjectData{
+    pub group_id : usize,
 }
 
 impl Component for CollisionObjectData{
