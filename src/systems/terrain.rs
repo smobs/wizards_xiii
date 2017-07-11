@@ -25,11 +25,12 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
     let mut direction = Vector2::new(-1, 0);
     if let Some(mut p) = points.iter().next().cloned() {
         let mut current_point = Vector2::new(p[0], p[1]);
-        let mut edges = get_edges(&current_point, &points);
+        let mut edges;
         while !complete {
-            while (start == None) {
+            while start == None {
+                edges = get_edges(&current_point, &points);
                 let edge = !edges.is_empty();
-                if None == start && edge {
+                if edge {
                     start = Some(current_point);
                 } else {
                     current_point[0] -= 1;
@@ -39,15 +40,16 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
             let y = current_point[1] as f64;
             poly.push([x, y]);
             {
-                let clockwise : [(isize, isize); 8] = [(-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1),
-                              (-1, 0)];
-                
-                let mut count = 0;
-                while clockwise.iter().cycle().next() != Some(&(direction[0], direction[1])){
-                    count += 1;
-                }
-                for v in clockwise.iter().skip((count + 7) % 8).map(|&(x,y)|{ Vector2::new(x,y)}) {
+                let clockwise: [(isize, isize); 8] = [(-1, 1), (0, 1), (1, 1), (1, 0), (1, -1),
+                                                      (0, -1), (-1, -1), (-1, 0)];
 
+                let count = clockwise.iter()
+                    .take_while(|&&(x, y)| x != direction[0] || y != direction[1])
+                    .count();
+                for v in clockwise.iter()
+                    .cycle()
+                    .skip((count + 7) % 8)
+                    .map(|&(x, y)| Vector2::new(x, y)) {
                     let mut at = current_point.clone();
                     at += v;
                     edges = get_edges(&at, &points);
@@ -63,7 +65,34 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
             }
         }
     }
-    return Bounds::Polygon(Box::new(poly));
+    let mut two_back = None;
+    let mut one_back = None;
+    let mut vec = vec!();
+    for p in poly {
+        match two_back {
+            None => {
+                two_back = Some(p);
+            }
+            Some(tb) => {
+                match one_back {
+                    None => {
+                        one_back = Some(p);
+                    }
+                    Some(ob) => {
+                        if (tb[0] == ob[0] && ob[0] == p[0]) || (tb[1] == ob[1] && ob[1] == p[1]) {
+                            one_back = Some(p);
+                        } else {
+                            vec.push(tb);
+                            two_back = Some(ob);
+                            one_back = Some(p);
+                        }
+                    }
+                }
+            }
+        }
+        
+    }
+    return Bounds::Polygon(Box::new(vec));
 }
 impl<'a> System<'a> for TerrainSystem {
     type SystemData = (WriteStorage<'a, Terrain>, WriteStorage<'a, Bounds>);
