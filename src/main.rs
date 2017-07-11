@@ -20,15 +20,34 @@ struct Game<'a> {
     // TODO: are these lifetimes right?
     dispatcher: Dispatcher<'a, 'a>,
 }
-fn create_terrain(world : &mut World){
-            static poly : [[f64; 2]; 6] = [[0.0,0.0], [0.0, 200.0], [50.0, 50.0], [200.0, 0.0], [100.0, 0.0], [0.0, -300.0]];
-            world.create_entity()
-            .with(Pos {
-                x: 0.0,
-                y: 300.0,
-            })
-            .with(Bounds::Polygon(Box::new(poly)))
-            .with(CollisionObjectData {group_id: 3});
+fn create_terrain(world: &mut World) {
+    static poly: [[f64; 2]; 6] =
+        [[0.0, 0.0], [0.0, 200.0], [50.0, 50.0], [200.0, 0.0], [100.0, 0.0], [0.0, -300.0]];
+    world.create_entity()
+        .with(Pos { x: 0.0, y: 300.0 })
+        .with(Bounds::Polygon(Box::new(poly)))
+        .with(CollisionObjectData { group_id: 3 });
+}
+fn create_players(world: &mut World) {
+    world.create_entity()
+        .with(Pos {
+            x: 350.0,
+            y: 100.0,
+        })
+        .with(Vel { x: 0.0, y: 0.0 })
+        .with(Player(1))
+        .with(Bounds::Rectangle(50.0, 50.0))
+        .with(CollisionObjectData { group_id: 1 });
+    world.create_entity()
+        .with(Pos {
+            x: 400.0,
+            y: 50.0,
+        })
+        .with(Vel { x: 0.0, y: 0.0 })
+        .with(Bounds::Circle(25.0))
+        .with(Player(2))
+        .with(CollisionObjectData { group_id: 2 });
+
 }
 impl<'a> Game<'a> {
     fn new() -> Game<'a> {
@@ -42,23 +61,10 @@ impl<'a> Game<'a> {
         world.register::<Player>();
         world.register::<CollisionObjectData>();
 
-        world.create_entity()
-            .with(Pos { x: 350.0, y: 100.0 })
-            .with(Vel { x: 0.0, y: 0.0 })
-            .with(Player(1))
-            .with(Bounds::Rectangle(50.0, 50.0))
-            .with(CollisionObjectData {group_id: 1});
-        world.create_entity()
-            .with(Pos {
-                x: 400.0,
-                y: 50.0,
-            })
-            .with(Vel { x: 0.0, y: 0.0 })
-            .with(Bounds::Circle(25.0))
-            .with(Player(2))
-            .with(CollisionObjectData {group_id: 2});
+        create_players(&mut world);
 
         create_terrain(&mut world);
+
         let dispatcher = DispatcherBuilder::new()
             .add(UpdateControlSystem, "ControlSystem", &[])
             .add(UpdatePositionSystem,
