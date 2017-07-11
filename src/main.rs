@@ -23,10 +23,9 @@ struct Game<'a> {
     dispatcher: Dispatcher<'a, 'a>,
 }
 fn create_terrain(world: &mut World) {
-    let poly = [[0.0, 0.0], [0.0, 200.0], [50.0, 50.0], [200.0, 0.0], [100.0, 0.0], [0.0, -300.0]];
     world.create_entity()
         .with(Pos { x: 0.0, y: 300.0 })
-        .with(Bounds::Polygon(Box::new(poly)))
+        .with(Bounds::Polygon(Box::new(vec!())))
         .with(CollisionObjectData { group_id: 3 })
         .with(Terrain::new(0, 400, 700, 100));
 }
@@ -118,7 +117,7 @@ impl<'a> Game<'a> {
                             g);
                 }
                 Bounds::Polygon(ref ps) => {
-                    let ps = Vec::from_iter(ps.into_iter().map(|p| [p[0] + pos.x, p[1] + pos.y]));
+                    let ps = Vec::from_iter(ps[..].into_iter().map(|p| [p[0] + pos.x, p[1] + pos.y]));
 
                     polygon([0.0, 1.0, 0.0, 0.5], &ps, c.transform, g)
                 }

@@ -39,7 +39,7 @@ impl<'a> CollisionSystem {
                     Bounds::Circle(r) => ShapeHandle::new(Ball::new(r)),
                     Bounds::Polygon(ref ps) => {
                         let max_index = ps.len();
-                        let points = Vec::from_iter(ps.into_iter().map(|p| Point2::new(p[0], p[1])));
+                        let points = Vec::from_iter(ps[..].into_iter().map(|p| Point2::new(p[0], p[1])));
                         let indicies = Vec::from_iter((1..(max_index)).map(|p| Point2::new(p-1, p)).chain(once(Point2::new(max_index-1, 0))));
                         ShapeHandle::new(Polyline::new(Arc::new(points), Arc::new(indicies), None, None))
                     }
