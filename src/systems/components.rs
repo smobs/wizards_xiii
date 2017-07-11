@@ -55,7 +55,7 @@ impl Component for CollisionObjectData{
 
 pub struct Terrain{
     pub dirty : bool,
-    pub points : HashSet<[usize; 2]>
+    pub points : HashSet<[isize; 2]>
 }
 
 impl Terrain {
@@ -63,7 +63,7 @@ impl Terrain {
         let mut ps = HashSet::new();
         for x in x..(x+width){
             for y in y..(y+height){
-                ps.insert([x,y]);
+                ps.insert([x as isize,y as isize]);
             }
         }
         Terrain{dirty: true, points: ps}

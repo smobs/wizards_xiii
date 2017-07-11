@@ -27,7 +27,7 @@ fn create_terrain(world: &mut World) {
         .with(Pos { x: 0.0, y: 300.0 })
         .with(Bounds::Polygon(Box::new(vec!())))
         .with(CollisionObjectData { group_id: 3 })
-        .with(Terrain::new(0, 400, 700, 100));
+        .with(Terrain::new(0, 400, 50, 50));
 }
 fn create_players(world: &mut World) {
     world.create_entity()
