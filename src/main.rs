@@ -24,10 +24,10 @@ struct Game<'a> {
 }
 fn create_terrain(world: &mut World) {
     world.create_entity()
-        .with(Pos { x: 0.0, y: 300.0 })
+        .with(Pos { x: 0.0, y: 0.0 })
         .with(Bounds::Polygon(Box::new(vec!())))
         .with(CollisionObjectData { group_id: 3 })
-        .with(Terrain::new(0, 400, 50, 50));
+        .with(Terrain::new(200, 400, 500, 100));
 }
 fn create_players(world: &mut World) {
     world.create_entity()

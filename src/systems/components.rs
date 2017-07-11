@@ -62,7 +62,7 @@ impl Terrain {
     pub fn new(x : usize, y : usize, width : usize, height : usize) -> Terrain{
         let mut ps = HashSet::new();
         for x in x..(x+width){
-            for y in y..(y+height){
+            for y in (500 - (x as isize)) .. 500{
                 ps.insert([x as isize,y as isize]);
             }
         }
