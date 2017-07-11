@@ -1,6 +1,5 @@
-use specs::{Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecStorage, World,
+use specs::{ReadStorage, System, VecStorage, World,
             WriteStorage, Join, Fetch, HashMapStorage};
-use piston_window::{rectangle, clear};
 use piston_window::Button::Keyboard;
 use piston_window::Button;
 use piston_window::Key::*;

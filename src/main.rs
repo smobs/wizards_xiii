@@ -21,8 +21,7 @@ struct Game<'a> {
     dispatcher: Dispatcher<'a, 'a>,
 }
 fn create_terrain(world: &mut World) {
-    let poly =
-        [[0.0, 0.0], [0.0, 200.0], [50.0, 50.0], [200.0, 0.0], [100.0, 0.0], [0.0, -300.0]];
+    let poly = [[0.0, 0.0], [0.0, 200.0], [50.0, 50.0], [200.0, 0.0], [100.0, 0.0], [0.0, -300.0]];
     world.create_entity()
         .with(Pos { x: 0.0, y: 300.0 })
         .with(Bounds::Polygon(Box::new(poly)))
