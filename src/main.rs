@@ -1,6 +1,7 @@
 extern crate piston_window;
 extern crate specs;
 extern crate ncollide;
+extern crate nalgebra;
 
 use piston_window::*;
 use piston_window::Button::Keyboard;
@@ -14,6 +15,7 @@ mod systems;
 use systems::assorted::*;
 use systems::components::*;
 use systems::collision::*;
+use systems::terrain::*;
 
 struct Game<'a> {
     world: World,
@@ -25,7 +27,8 @@ fn create_terrain(world: &mut World) {
     world.create_entity()
         .with(Pos { x: 0.0, y: 300.0 })
         .with(Bounds::Polygon(Box::new(poly)))
-        .with(CollisionObjectData { group_id: 3 });
+        .with(CollisionObjectData { group_id: 3 })
+        .with(Terrain::new(0, 400, 700, 100));
 }
 fn create_players(world: &mut World) {
     world.create_entity()
@@ -59,12 +62,14 @@ impl<'a> Game<'a> {
         world.register::<Bounds>();
         world.register::<Player>();
         world.register::<CollisionObjectData>();
+        world.register::<Terrain>();
 
         create_players(&mut world);
 
         create_terrain(&mut world);
 
         let dispatcher = DispatcherBuilder::new()
+            .add(TerrainSystem, "TerrainSystem", &[])
             .add(UpdateControlSystem, "ControlSystem", &[])
             .add(UpdatePositionSystem,
                  "UpdatePositionSystem",

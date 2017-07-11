@@ -1,13 +1,10 @@
-
-extern crate nalgebra;
-
 use specs::{Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecStorage, World,
             WriteStorage, Join, Fetch, HashMapStorage, Entities, Entity};
 
 use ncollide::world::*;
 use ncollide::shape::*;
-use self::nalgebra as na;
-use self::nalgebra::{Vector2, Isometry2, Point2};
+use nalgebra as na;
+use nalgebra::{Vector2, Isometry2, Point2};
 use systems::components::*;
 use std;
 use std::iter::*;

@@ -52,3 +52,24 @@ pub struct CollisionObjectData{
 impl Component for CollisionObjectData{
     type Storage = VecStorage<CollisionObjectData>;
 }
+
+pub struct Terrain{
+    pub dirty : bool,
+    pub points : HashSet<(usize, usize)>
+}
+
+impl Terrain {
+    pub fn new(x : usize, y : usize, width : usize, height : usize) -> Terrain{
+        let mut ps = HashSet::new();
+        for x in x..(x+width){
+            for y in y..(y+height){
+                ps.insert((x,y));
+            }
+        }
+        Terrain{dirty: true, points: ps}
+    }
+}
+
+impl Component for Terrain {
+    type Storage = HashMapStorage<Terrain>;
+}
