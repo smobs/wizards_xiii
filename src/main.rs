@@ -27,7 +27,7 @@ fn create_terrain(world : &mut World){
                 x: 0.0,
                 y: 300.0,
             })
-            .with(Bounds::Polygon(&poly))
+            .with(Bounds::Polygon(Box::new(poly)))
             .with(CollisionObjectData {group_id: 3});
 }
 impl<'a> Game<'a> {
@@ -107,7 +107,7 @@ impl<'a> Game<'a> {
                             c.transform,
                             g);
                 }
-                Bounds::Polygon(ps) => {
+                Bounds::Polygon(ref ps) => {
                     let ps = Vec::from_iter(ps.into_iter().map(|p| [p[0] + pos.x, p[1] + pos.y]));
 
                     polygon([0.0, 1.0, 0.0, 0.5], &ps, c.transform, g)

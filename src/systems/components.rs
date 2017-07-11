@@ -3,6 +3,7 @@ use specs::{Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecSt
 
 use std::collections::HashSet;
 use piston_window::Button;
+use std::boxed;
 
 pub struct Delta(pub f64);
 pub struct GameInput(pub HashSet<Button>);
@@ -21,7 +22,7 @@ impl Component for Pos {
 pub enum Bounds {
     Rectangle(f64, f64),
     Circle(f64),
-    Polygon(&'static[[f64; 2]]),
+    Polygon(Box<[[f64; 2]]>),
 }
 
 impl Component for Bounds {
