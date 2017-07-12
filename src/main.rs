@@ -123,6 +123,13 @@ impl<'a> Game<'a> {
                 }
             }
         }
+        for col in (&self.world.read::<CollisionObjectData>()).join().flat_map(|c| {c.contacts.values().flat_map(|v| {v})}){
+            let r = 10.0;
+            ellipse([0.0, 1.0, 1.0, 1.0],
+                            [col[0] - r, col[1] - r, 2.0 * r, 2.0 * r],
+                            c.transform,
+                            g);
+        }
     }
 }
 
