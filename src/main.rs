@@ -128,7 +128,7 @@ impl<'a> Game<'a> {
 
 fn main() {
     let mut window: PistonWindow =
-        WindowSettings::new("Hello Piston!", [700, 500]).build().unwrap();
+        WindowSettings::new("Hello Piston!", [700, 500]).exit_on_esc(true).build().unwrap();
 
     let mut game = Game::new();
 
