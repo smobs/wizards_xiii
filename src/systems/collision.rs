@@ -20,13 +20,32 @@ impl CollisionSystem {
 }
 
 impl<'a> CollisionSystem {
+    fn remove_changed(&mut self,
+                      ent: &Entities<'a>,
+                      col: &mut WriteStorage<'a, CollisionObjectData>,
+                      bounds: &ReadStorage<'a, Bounds>) {
+        let world = &mut self.0;
+        for (ent, col, bounds) in (&**ent, col, bounds).join() {
+            let id = ent.id() as usize;
+            match &col.current_bounds {
+                &Some(ref b) => {
+                    if *b != *bounds {
+                        println!("Removing entity {:?}", id);
+                        world.deferred_remove(id);
+                    }
+                }
+                _ => {}
+            }
+        }
+        world.update();
+    }
     fn update_collisions(&mut self,
                          ent: &Entities<'a>,
                          pos: &WriteStorage<'a, Pos>,
-                         col: &WriteStorage<'a, CollisionObjectData>,
+                         col: &mut WriteStorage<'a, CollisionObjectData>,
                          bounds: &ReadStorage<'a, Bounds>) {
         let world = &mut self.0;
-        for (ent, pos, col, bounds) in (&**ent, &*pos, &*col, &*bounds).join() {
+        for (ent, pos, col, bounds) in (&**ent, pos, col, bounds).join() {
             let id = ent.id() as usize;
             let p = Isometry2::new(Vector2::new(pos.x, pos.y), na::zero());
             if let Some(_) = world.collision_object(id) {
@@ -52,6 +71,8 @@ impl<'a> CollisionSystem {
                 };
                 let mut cg = CollisionGroups::new();
                 world.deferred_add(id, p, shape, cg, GeometricQueryType::Contacts(0.0), ent);
+                let b = (*bounds).clone();
+                col.current_bounds = Some(b);
             }
         }
         world.update();
@@ -110,13 +131,14 @@ impl<'a> CollisionSystem {
                 p2.push([contact.world2[0], contact.world2[1]]);
             }
             if let Some(col) = col.get_mut(e1.data) {
-                if (!p1.is_empty()){
-                println!("e1 contacts {:?}", p1);
-                }col.contacts.insert(e2.data, p1); 
+                if (!p1.is_empty()) {
+                    println!("e1 contacts {:?}", p1);
+                }
+                col.contacts.insert(e2.data, p1);
             }
             if let Some(col) = col.get_mut(e2.data) {
-                if !p2.is_empty(){
-                println!("e2 contacts {:?}", p2);
+                if !p2.is_empty() {
+                    println!("e2 contacts {:?}", p2);
                 }
                 col.contacts.insert(e1.data, p2);
             }
@@ -135,17 +157,19 @@ impl<'a> System<'a> for CollisionSystem {
         let mut i = 0;
 
         Self::clear_collision_objects(&mut col);
+        self.remove_changed(&ent, &mut col, &bounds);
         while i < 10 && dirty {
             {
-                self.update_collisions(&ent, &pos, &col, &bounds);
+                self.update_collisions(&ent, &pos, &mut col, &bounds);
             }
             {
                 dirty = self.basic_physics(&mut pos, &vel);
             }
             {
-                if(i == 0){
-                self.update_collision_objects(&mut col)
-            }}
+                if (i == 0) {
+                    self.update_collision_objects(&mut col)
+                }
+            }
             i += 1;
         }
         {

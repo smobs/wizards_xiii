@@ -20,6 +20,8 @@ impl Component for Pos {
 }
 
 
+#[derive(PartialEq)]
+#[derive(Clone)]
 pub enum Bounds {
     Rectangle(f64, f64),
     Circle(f64),
@@ -48,7 +50,8 @@ impl Component for Vel {
 
 pub struct CollisionObjectData{
     pub group_id : usize,
-    pub contacts : HashMap<Entity, Vec<[f64; 2]>>
+    pub contacts : HashMap<Entity, Vec<[f64; 2]>>,
+    pub current_bounds : Option<Bounds>
 }
 
 impl CollisionObjectData {
@@ -56,6 +59,7 @@ impl CollisionObjectData {
         CollisionObjectData{
             group_id: id,
             contacts:HashMap::new(),
+            current_bounds: None
         }
     }
 }
