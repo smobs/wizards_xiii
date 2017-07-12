@@ -40,8 +40,14 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
             }
             poly.push(current_point);
             {
-                let clockwise: [(f64, f64); 8] = [(-1.0, 1.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (1.0, -1.0),
-                                                      (0.0, -1.0), (-1.0, -1.0), (-1.0, 0.0)];
+                let clockwise: [(f64, f64); 8] = [(-1.0, 1.0),
+                                                  (0.0, 1.0),
+                                                  (1.0, 1.0),
+                                                  (1.0, 0.0),
+                                                  (1.0, -1.0),
+                                                  (0.0, -1.0),
+                                                  (-1.0, -1.0),
+                                                  (-1.0, 0.0)];
 
                 let count = clockwise.iter()
                     .take_while(|&&(x, y)| x != direction[0] || y != direction[1])
@@ -67,7 +73,7 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
     }
     let mut two_back = None;
     let mut one_back = None;
-    let mut vec = vec!();
+    let mut vec = vec![];
     for p in poly {
         match two_back {
             None => {
@@ -93,14 +99,30 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
                 }
             }
         }
-        
+
     }
     return Bounds::Polygon(Box::new(vec));
 }
+
+fn handle_collision(terrain: &mut Terrain, col: &CollisionObjectData) {
+
+    for contact in col.contacts.values().flat_map(|x| x) {
+        terrain.dirty = true;
+        for x in -5..5 {
+            for y in -5..5 {
+                let p = [(contact[0]) as isize + x, (contact[1]) as isize + y];
+                !terrain.points.remove(&p); 
+            }
+        }
+    }
+}
 impl<'a> System<'a> for TerrainSystem {
-    type SystemData = (WriteStorage<'a, Terrain>, WriteStorage<'a, Bounds>);
-    fn run(&mut self, (mut terrain, mut bounds): Self::SystemData) {
-        for (mut terrain, mut bounds) in (&mut terrain, &mut bounds).join() {
+    type SystemData = (WriteStorage<'a, Terrain>,
+     WriteStorage<'a, Bounds>,
+     ReadStorage<'a, CollisionObjectData>);
+    fn run(&mut self, (mut terrain, mut bounds, col): Self::SystemData) {
+        for (mut terrain, mut bounds, col) in (&mut terrain, &mut bounds, &col).join() {
+            handle_collision(terrain, col);
             if terrain.dirty {
                 *bounds = new_bounds(&terrain.points);
                 (*terrain).dirty = false;
