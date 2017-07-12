@@ -7,11 +7,13 @@ use nalgebra::*;
 pub struct TerrainSystem;
 
 
-fn get_edges(point: &Vector2<isize>, points: &HashSet<[isize; 2]>) -> HashSet<[isize; 2]> {
+fn get_edges(point: &Vector2<f64>, points: &HashSet<[isize; 2]>) -> HashSet<[isize; 2]> {
     let mut neighboughs = HashSet::new();
-    for p1 in point[0] - 1..point[0] + 2 {
-        for p2 in point[1] - 1..point[1] + 2 {
-            if !(point[0] == p1 && point[1] == p2) {
+    let px = point[0] as isize;
+    let py = point[1] as isize;
+    for p1 in px - 1..px + 2 {
+        for p2 in py - 1..py + 2 {
+            if !(px == p1 && py == p2) {
                 neighboughs.insert([p1, p2]);
             }
         }
@@ -22,9 +24,9 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
     let mut poly = vec![];
     let mut complete = false;
     let mut start = None;
-    let mut direction = Vector2::new(-1, 0);
+    let mut direction = Vector2::new(-1.0, 0.0);
     if let Some(mut p) = points.iter().next().cloned() {
-        let mut current_point = Vector2::new(p[0], p[1]);
+        let mut current_point = Vector2::new(p[0] as f64, p[1] as f64);
         let mut edges;
         while !complete {
             while start == None {
@@ -33,15 +35,13 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
                 if edge {
                     start = Some(current_point);
                 } else {
-                    current_point[0] -= 1;
+                    current_point[0] -= 1.0;
                 }
             }
-            let x = current_point[0] as f64;
-            let y = current_point[1] as f64;
-            poly.push([x, y]);
+            poly.push(current_point);
             {
-                let clockwise: [(isize, isize); 8] = [(-1, 1), (0, 1), (1, 1), (1, 0), (1, -1),
-                                                      (0, -1), (-1, -1), (-1, 0)];
+                let clockwise: [(f64, f64); 8] = [(-1.0, 1.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (1.0, -1.0),
+                                                      (0.0, -1.0), (-1.0, -1.0), (-1.0, 0.0)];
 
                 let count = clockwise.iter()
                     .take_while(|&&(x, y)| x != direction[0] || y != direction[1])
@@ -79,10 +79,13 @@ fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
                         one_back = Some(p);
                     }
                     Some(ob) => {
-                        if (tb[0] == ob[0] && ob[0] == p[0]) || (tb[1] == ob[1] && ob[1] == p[1]) {
+                        let d1 = ob - tb;
+                        let d2 = p - ob;
+
+                        if d2.normalize() == d1.normalize() {
                             one_back = Some(p);
                         } else {
-                            vec.push(tb);
+                            vec.push([tb[0] as f64, tb[1] as f64]);
                             two_back = Some(ob);
                             one_back = Some(p);
                         }
