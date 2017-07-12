@@ -1,7 +1,8 @@
-use specs::{Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecStorage, World,
+use specs::{Entity, Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecStorage, World,
             WriteStorage, Join, Fetch, HashMapStorage};
 
 use std::collections::HashSet;
+use std::collections::HashMap;
 use piston_window::Button;
 use std::boxed;
 
@@ -47,8 +48,17 @@ impl Component for Vel {
 
 pub struct CollisionObjectData{
     pub group_id : usize,
+    pub contacts : HashMap<Entity, Vec<[f64; 2]>>
 }
 
+impl CollisionObjectData {
+    pub fn new(id : usize) -> CollisionObjectData {
+        CollisionObjectData{
+            group_id: id,
+            contacts:HashMap::new(),
+        }
+    }
+}
 impl Component for CollisionObjectData{
     type Storage = VecStorage<CollisionObjectData>;
 }

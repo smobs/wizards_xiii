@@ -26,7 +26,7 @@ fn create_terrain(world: &mut World) {
     world.create_entity()
         .with(Pos { x: 0.0, y: 0.0 })
         .with(Bounds::Polygon(Box::new(vec!())))
-        .with(CollisionObjectData { group_id: 3 })
+        .with(CollisionObjectData::new(3))
         .with(Terrain::new(200, 400, 500, 100));
 }
 fn create_players(world: &mut World) {
@@ -38,7 +38,7 @@ fn create_players(world: &mut World) {
         .with(Vel { x: 0.0, y: 0.0 })
         .with(Player(1))
         .with(Bounds::Rectangle(50.0, 50.0))
-        .with(CollisionObjectData { group_id: 1 });
+        .with(CollisionObjectData::new(1));
     world.create_entity()
         .with(Pos {
             x: 400.0,
@@ -47,7 +47,7 @@ fn create_players(world: &mut World) {
         .with(Vel { x: 0.0, y: 0.0 })
         .with(Bounds::Circle(25.0))
         .with(Player(2))
-        .with(CollisionObjectData { group_id: 2 });
+        .with(CollisionObjectData::new(2));
 
 }
 impl<'a> Game<'a> {
