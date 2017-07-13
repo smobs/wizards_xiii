@@ -25,7 +25,7 @@ struct Game<'a> {
 fn create_terrain(world: &mut World) {
     world.create_entity()
         .with(Pos { x: 0.0, y: 0.0 })
-        .with(Bounds::Polygon(Box::new(vec!())))
+        .with(Bounds::Polygon(Box::new(vec![])))
         .with(CollisionObjectData::new(3))
         .with(Terrain::new(200, 400, 500, 100));
 }
@@ -49,6 +49,28 @@ fn create_players(world: &mut World) {
         .with(Player(2))
         .with(CollisionObjectData::new(2));
 
+}
+
+fn draw_bounds(bounds : &Bounds, pos : &Pos, c: Context, g: &mut G2d ) {
+    match *bounds {
+        Bounds::Rectangle(x, y) => {
+            rectangle([1.0, 0.0, 0.0, 1.0],
+                      [pos.x - (x / 2.0), pos.y - (y / 2.0), x, y],
+                      c.transform,
+                      g);
+        }
+        Bounds::Circle(r) => {
+            ellipse([0.0, 0.0, 1.0, 1.0],
+                    [pos.x - r, pos.y - r, 2.0 * r, 2.0 * r],
+                    c.transform,
+                    g);
+        }
+        Bounds::Polygon(ref ps) => {
+            let ps = Vec::from_iter(ps[..].into_iter().map(|p| [p[0] + pos.x, p[1] + pos.y]));
+
+            polygon([0.0, 1.0, 0.0, 0.5], &ps, c.transform, g)
+        }
+    }
 }
 impl<'a> Game<'a> {
     fn new() -> Game<'a> {
@@ -103,32 +125,16 @@ impl<'a> Game<'a> {
         let bounds = &self.world.read::<Bounds>();
         clear([0.5, 0.5, 0.5, 1.0], g);
         for (pos, bounds) in (pos, bounds).join() {
-            match *bounds {
-                Bounds::Rectangle(x, y) => {
-                    rectangle([1.0, 0.0, 0.0, 1.0],
-                              [pos.x - (x / 2.0), pos.y - (y / 2.0), x, y],
-                              c.transform,
-                              g);
-                }
-                Bounds::Circle(r) => {
-                    ellipse([0.0, 0.0, 1.0, 1.0],
-                            [pos.x - r, pos.y - r, 2.0 * r, 2.0 * r],
-                            c.transform,
-                            g);
-                }
-                Bounds::Polygon(ref ps) => {
-                    let ps = Vec::from_iter(ps[..].into_iter().map(|p| [p[0] + pos.x, p[1] + pos.y]));
-
-                    polygon([0.0, 1.0, 0.0, 0.5], &ps, c.transform, g)
-                }
-            }
+            draw_bounds(bounds, pos, c, g)
         }
-        for col in (&self.world.read::<CollisionObjectData>()).join().flat_map(|c| {c.contacts.values().flat_map(|v| {v})}){
+        for col in (&self.world.read::<CollisionObjectData>())
+            .join()
+            .flat_map(|c| c.contacts.values().flat_map(|v| v)) {
             let r = 10.0;
             ellipse([0.0, 1.0, 1.0, 1.0],
-                            [col[0] - r, col[1] - r, 2.0 * r, 2.0 * r],
-                            c.transform,
-                            g);
+                    [col[0] - r, col[1] - r, 2.0 * r, 2.0 * r],
+                    c.transform,
+                    g);
         }
     }
 }
