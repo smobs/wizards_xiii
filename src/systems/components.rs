@@ -1,5 +1,5 @@
-use specs::{Entity, Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecStorage, World,
-            WriteStorage, Join, Fetch, HashMapStorage};
+use specs::{Entity, Component, DispatcherBuilder, Dispatcher, ReadStorage, System, VecStorage,
+            World, WriteStorage, Join, Fetch, HashMapStorage};
 
 use std::collections::HashSet;
 use std::collections::HashMap;
@@ -26,6 +26,7 @@ pub enum Bounds {
     Rectangle(f64, f64),
     Circle(f64),
     Polygon(Box<Vec<[f64; 2]>>),
+    Grid{points: HashSet<[usize; 2]>, height: usize, width: usize},
 }
 
 impl Component for Bounds {
@@ -48,39 +49,42 @@ impl Component for Vel {
     type Storage = VecStorage<Self>;
 }
 
-pub struct CollisionObjectData{
-    pub group_id : usize,
-    pub contacts : HashMap<Entity, Vec<[f64; 2]>>,
-    pub current_bounds : Option<Bounds>
+pub struct CollisionObjectData {
+    pub group_id: usize,
+    pub contacts: HashMap<Entity, Vec<[f64; 2]>>,
+    pub current_bounds: Option<Bounds>,
 }
 
 impl CollisionObjectData {
-    pub fn new(id : usize) -> CollisionObjectData {
-        CollisionObjectData{
+    pub fn new(id: usize) -> CollisionObjectData {
+        CollisionObjectData {
             group_id: id,
-            contacts:HashMap::new(),
-            current_bounds: None
+            contacts: HashMap::new(),
+            current_bounds: None,
         }
     }
 }
-impl Component for CollisionObjectData{
+impl Component for CollisionObjectData {
     type Storage = VecStorage<CollisionObjectData>;
 }
 
-pub struct Terrain{
-    pub dirty : bool,
-    pub points : HashSet<[isize; 2]>
+pub struct Terrain {
+    pub dirty: bool,
+    pub points: HashSet<[isize; 2]>,
 }
 
 impl Terrain {
-    pub fn new(x : usize, y : usize, width : usize, height : usize) -> Terrain{
+    pub fn new(x: usize, y: usize, width: usize, height: usize) -> Terrain {
         let mut ps = HashSet::new();
-        for x in x..(x+width){
-            for y in (500 - (x as isize)) .. 500{
-                ps.insert([x as isize,y as isize]);
+        for x in x..(x + width) {
+            for y in (500 - (x as isize))..500 {
+                ps.insert([x as isize, y as isize]);
             }
         }
-        Terrain{dirty: true, points: ps}
+        Terrain {
+            dirty: true,
+            points: ps,
+        }
     }
 }
 

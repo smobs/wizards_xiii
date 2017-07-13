@@ -52,23 +52,32 @@ fn create_players(world: &mut World) {
 }
 
 fn draw_bounds(bounds : &Bounds, pos : &Pos, c: Context, g: &mut G2d ) {
-    match *bounds {
-        Bounds::Rectangle(x, y) => {
+    match bounds {
+        &Bounds::Rectangle(x, y) => {
             rectangle([1.0, 0.0, 0.0, 1.0],
                       [pos.x - (x / 2.0), pos.y - (y / 2.0), x, y],
                       c.transform,
                       g);
         }
-        Bounds::Circle(r) => {
+        &Bounds::Circle(r) => {
             ellipse([0.0, 0.0, 1.0, 1.0],
                     [pos.x - r, pos.y - r, 2.0 * r, 2.0 * r],
                     c.transform,
                     g);
         }
-        Bounds::Polygon(ref ps) => {
+        &Bounds::Polygon(ref ps) => {
             let ps = Vec::from_iter(ps[..].into_iter().map(|p| [p[0] + pos.x, p[1] + pos.y]));
 
             polygon([0.0, 1.0, 0.0, 0.5], &ps, c.transform, g)
+        }
+        &Bounds::Grid{points: ref ps, height: _, width: _} => {
+            for p in ps.iter() {
+                let temp = Pos{
+                    x: pos.x + (p[0] as f64),
+                    y: pos.y + (p[1] as f64),
+                };
+                draw_bounds(&Bounds::Rectangle(1.0, 1.0),  &temp, c, g)
+            }
         }
     }
 }
