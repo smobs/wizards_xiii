@@ -13,9 +13,35 @@ use ncollide::partitioning::*;
 use ncollide::bounding_volume::*;
 use std::collections::HashSet;
 use std::collections::HashMap;
-
+use systems::id_store::*;
 pub struct CollisionSystem(CollisionWorld2<f64, Entity>);
 
+trait UpdateableCollision{
+    fn get_current_part_ids<F>(&self, &mut F) -> HashMap<usize, usize> where F : FnMut(usize) -> usize ;
+    fn get_shape_handle(&self,  usize) -> ShapeHandle2<f64>;
+    fn part_changed(&self, usize, &Self) -> bool;
+}
+
+impl UpdateableCollision for Bounds {
+    fn get_current_part_ids<F>(&self, get: &mut F) -> HashMap<usize, usize> where F : FnMut(usize) -> usize {
+        let i = get(0);
+        let mut h = HashMap::new();
+        h.insert(i, 0);
+        h
+    }
+    
+    fn get_shape_handle(&self, index : usize) -> ShapeHandle2<f64>{
+        shape_from_bounds(self)
+    }
+    fn part_changed(&self, part: usize, old : &Self) -> bool{
+        if let &Bounds::Grid{points: _, height:_, width: _} = self {
+            false
+        }
+        else {
+            *self != *old
+        }
+    } 
+}
 impl CollisionSystem {
     pub fn new() -> Self {
         let world = CollisionWorld::new(0.02, false);
@@ -38,99 +64,13 @@ fn create_polygon(ps: &Box<Vec<[f64; 2]>>) -> Polyline2<f64> {
     Polyline::new(Arc::new(points), Arc::new(indicies), None, None)
 }
 
-struct GridShape {
-    bvt: BVT<usize, AABB2<f64>>,
-    pointMap: HashMap<usize, [usize; 2]>,
-    points: HashSet<[usize; 2]>,
-    height: usize,
-    width: usize,
-}
-impl GridShape {
-    pub fn new(ps: &HashSet<[usize; 2]>, width: usize, height: usize) -> GridShape {
-        let map: HashMap<usize, [usize; 2]> = (0..).zip(ps.iter().map(|p| p.clone())).collect();
-        let mut aabbs: Vec<(usize, AABB2<f64>)> = vec![];
-
-        for (&i, p) in map.iter() {
-            aabbs.push((i, Self::create_aabb(p[0], p[0])));
-        }
-
-        GridShape {
-            bvt: BVT::new_balanced(aabbs),
-            points: ps.clone(),
-            pointMap: map,
-            height: height,
-            width: width,
-        }
-    }
-    fn create_aabb(x: usize, y: usize) -> AABB2<f64> {
-        aabb(&Cuboid::new(Vector2::new(1.0, 1.0)),
-             &Isometry2::new(Vector2::new(x as f64, y as f64), na::zero()))
-    }
-}
-impl CompositeShape<Point2<f64>, Isometry2<f64>> for GridShape {
-    fn map_part_at(&self, i: usize, f: &mut FnMut(&Isometry2<f64>, &Shape2<f64>)) {
-        // The translation needed to center the cuboid at the point (1, 1).
-        if let Some(p) = self.pointMap.get(&i) {
-
-            let transform = Isometry2::new(Vector2::new(p[0] as f64, p[1] as f64), na::zero());
-
-            // Create the cuboid on-the-fly.
-            let cuboid = Cuboid2::new(Vector2::new(1.0, 1.0));
-
-            // Call the function.
-            f(&transform, &cuboid)
-        }
-    }
-
-    fn map_transformed_part_at(&self,
-                               i: usize,
-                               m: &Isometry2<f64>,
-                               f: &mut FnMut(&Isometry2<f64>, &Shape2<f64>)) {
-        // Prepend the translation needed to center the cuboid at the point (1, 1).
-        if let Some(p) = self.pointMap.get(&i) {
-
-        let transform = m * Translation2::new(p[0] as f64, p[1] as f64);
-
-        // Create the cuboid on-the-fly.
-        let cuboid = Cuboid2::new(Vector2::new(1.0, 1.0));
-
-        // Call the function.
-        f(&transform, &cuboid)
-        }
-    }
-
-    fn aabb_at(&self, i: usize) -> AABB2<f64> {
-        // Compute the i-th AABB.
-        match self.pointMap.get(&i) {
-            Some(p) => Self::create_aabb(p[0], p[0]), 
-            _ => panic!("Aaah"),
-        }
-    }
-
-    fn bvt(&self) -> &BVT<usize, AABB2<f64>> {
-        // Reference to the acceleration structure.
-        &self.bvt
-    }
-}
-impl Shape<Point2<f64>, Isometry2<f64>> for GridShape {
-    fn aabb(&self, m: &Isometry2<f64>) -> AABB2<f64> {
-        AABB2::new(m.translation * Point2::new(-1.0, -1.0),
-                   m.translation * Point2::new(self.width as f64, self.height as f64))
-    }
-
-    fn as_composite_shape(&self) -> Option<&CompositeShape2<f64>> {
-        Some(self)
-    }
-}
 
 fn shape_from_bounds(bounds: &Bounds) -> ShapeHandle2<f64> {
     match bounds {
         &Bounds::Rectangle(x, y) => ShapeHandle::new(create_rectangle(x, y)),
         &Bounds::Circle(r) => ShapeHandle::new(create_circle(r)),
         &Bounds::Polygon(ref ps) => ShapeHandle::new(create_polygon(ps)),
-        &Bounds::Grid { points: ref ps, height: h, width: w } => {
-            ShapeHandle::new(GridShape::new(ps, w, h))
-        }
+        &Bounds::Grid { points: ref ps, height: h, width: w } => shape_from_bounds(&Bounds::Rectangle(w as f64, h as f64)),
     }
 }
 impl<'a> CollisionSystem {
@@ -143,7 +83,7 @@ impl<'a> CollisionSystem {
             let id = ent.id() as usize;
             match &col.current_bounds {
                 &Some(ref b) => {
-                    if *b != *bounds {
+                    if bounds.part_changed(0, b) {
                         println!("Removing entity {:?}", id);
                         world.deferred_remove(id);
                     }
@@ -173,7 +113,7 @@ impl<'a> CollisionSystem {
             }
         }
         world.update();
-    }
+    } 
 
     fn basic_physics(&mut self,
                      pos: &mut WriteStorage<'a, Pos>,

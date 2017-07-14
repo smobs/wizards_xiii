@@ -26,7 +26,11 @@ pub enum Bounds {
     Rectangle(f64, f64),
     Circle(f64),
     Polygon(Box<Vec<[f64; 2]>>),
-    Grid{points: HashSet<[usize; 2]>, height: usize, width: usize},
+    Grid {
+        points: HashSet<[usize; 2]>,
+        height: usize,
+        width: usize,
+    },
 }
 
 impl Component for Bounds {
@@ -70,15 +74,15 @@ impl Component for CollisionObjectData {
 
 pub struct Terrain {
     pub dirty: bool,
-    pub points: HashSet<[isize; 2]>,
+    pub points: HashSet<[usize; 2]>,
 }
 
 impl Terrain {
     pub fn new(x: usize, y: usize, width: usize, height: usize) -> Terrain {
         let mut ps = HashSet::new();
         for x in x..(x + width) {
-            for y in (500 - (x as isize))..500 {
-                ps.insert([x as isize, y as isize]);
+            for y in y..(y + height) {
+                ps.insert([x, y]);
             }
         }
         Terrain {

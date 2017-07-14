@@ -108,10 +108,10 @@ fn handle_collision(terrain: &mut Terrain, col: &CollisionObjectData) {
 
     for contact in col.contacts.values().flat_map(|x| x) {
         terrain.dirty = true;
-        for x in -5..5 {
+        for x  in -5..5 {
             for y in -5..5 {
-                let p = [(contact[0]) as isize + x, (contact[1]) as isize + y];
-                !terrain.points.remove(&p); 
+                let p = [((contact[0]) + (x as f64)) as usize , ((contact[1])  + (y as f64)) as usize];
+                !terrain.points.remove(&p);  
             }
         }
     }
@@ -124,8 +124,9 @@ impl<'a> System<'a> for TerrainSystem {
         for (mut terrain, mut bounds, col) in (&mut terrain, &mut bounds, &col).join() {
             handle_collision(terrain, col);
             if terrain.dirty {
-                *bounds = new_bounds(&terrain.points);
-                (*terrain).dirty = false;
+                println!("Dirty copy");
+                *bounds = Bounds::Grid{points: terrain.points.clone(), width: 700, height: 500};
+                (*terrain).dirty = false; 
             }
         }
     }
