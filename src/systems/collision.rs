@@ -107,15 +107,17 @@ impl<'a> CollisionSystem {
         let world = &mut self.0;
         for (ent, pos, col, bounds) in (&**ent, pos, col, bounds).join() {
             let id = ent.id() as usize;
-            let p = Isometry2::new(Vector2::new(pos.x, pos.y), na::zero());
-            if let Some(_) = world.collision_object(id) {
-                world.deferred_set_position(id, p)
-            } else {
-                let shape = shape_from_bounds(bounds);
-                let mut cg = CollisionGroups::new();
-                world.deferred_add(id, p, shape, cg, GeometricQueryType::Contacts(0.0), ent);
-                let b = (*bounds).clone();
-                col.current_bounds = Some(b);
+            for (&id, &part) in bounds.get_current_part_ids(&mut |x| id).iter() {
+                let p = Isometry2::new(Vector2::new(pos.x, pos.y), na::zero());
+                if let Some(_) = world.collision_object(id) {
+                    world.deferred_set_position(id, p)
+                } else {
+                    let shape = bounds.get_shape_handle(part);
+                    let mut cg = CollisionGroups::new();
+                    world.deferred_add(id, p, shape, cg, GeometricQueryType::Contacts(0.0), ent);
+                    let b = (*bounds).clone();
+                    col.current_bounds = Some(b);
+                }
             }
         }
         world.update();
