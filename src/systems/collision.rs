@@ -19,7 +19,7 @@ pub struct CollisionSystem(CollisionWorld2<f64, Entity>);
 trait UpdateableCollision {
     fn get_current_part_ids<F>(&self, &mut F) -> HashMap<usize, usize>
         where F: FnMut(usize) -> usize;
-    fn get_shape_handle(&self, usize) -> ShapeHandle2<f64>;
+    fn get_shape_handle(&self, usize) -> Option<ShapeHandle2<f64>>;
     fn part_changed(&self, usize, &Self) -> bool;
 }
 
@@ -33,8 +33,17 @@ impl UpdateableCollision for Bounds {
         h
     }
 
-    fn get_shape_handle(&self, index: usize) -> ShapeHandle2<f64> {
-        shape_from_bounds(self)
+    fn get_shape_handle(&self, index: usize) -> Option<ShapeHandle2<f64>> {
+        if index == 0 {
+            match self {
+                &Bounds::Rectangle(x, y) => Some(ShapeHandle::new(create_rectangle(x, y))),
+                &Bounds::Circle(r) => Some(ShapeHandle::new(create_circle(r))),
+                &Bounds::Polygon(ref ps) => Some(ShapeHandle::new(create_polygon(ps))),
+                &Bounds::Grid { points: ref ps, height: h, width: w } => None,
+            }
+        } else {
+            None
+        }
     }
     fn part_changed(&self, part: usize, old: &Self) -> bool {
         if let &Bounds::Grid { points: _, height: _, width: _ } = self {
@@ -67,16 +76,6 @@ fn create_polygon(ps: &Box<Vec<[f64; 2]>>) -> Polyline2<f64> {
 }
 
 
-fn shape_from_bounds(bounds: &Bounds) -> ShapeHandle2<f64> {
-    match bounds {
-        &Bounds::Rectangle(x, y) => ShapeHandle::new(create_rectangle(x, y)),
-        &Bounds::Circle(r) => ShapeHandle::new(create_circle(r)),
-        &Bounds::Polygon(ref ps) => ShapeHandle::new(create_polygon(ps)),
-        &Bounds::Grid { points: ref ps, height: h, width: w } => {
-            shape_from_bounds(&Bounds::Rectangle(w as f64, h as f64))
-        }
-    }
-}
 impl<'a> CollisionSystem {
     fn remove_changed(&mut self,
                       ent: &Entities<'a>,
@@ -112,11 +111,12 @@ impl<'a> CollisionSystem {
                 if let Some(_) = world.collision_object(id) {
                     world.deferred_set_position(id, p)
                 } else {
-                    let shape = bounds.get_shape_handle(part);
-                    let mut cg = CollisionGroups::new();
-                    world.deferred_add(id, p, shape, cg, GeometricQueryType::Contacts(0.0), ent);
-                    let b = (*bounds).clone();
-                    col.current_bounds = Some(b);
+                    if let Some(shape) = bounds.get_shape_handle(part) {
+                        let mut cg = CollisionGroups::new();
+                        world.deferred_add(id, p, shape, cg, GeometricQueryType::Contacts(0.0), ent);
+                        let b = (*bounds).clone();
+                        col.current_bounds = Some(b);
+                    }
                 }
             }
         }
