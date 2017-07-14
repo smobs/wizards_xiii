@@ -14,13 +14,13 @@ use ncollide::bounding_volume::*;
 use std::collections::HashSet;
 use std::collections::HashMap;
 use systems::id_store::*;
-pub struct CollisionSystem(CollisionWorld2<f64, Entity>);
+pub struct CollisionSystem(CollisionWorld2<f64, Entity>, IdMap<(usize, usize)>);
 
 trait UpdateableCollision {
     fn get_current_part_ids<F>(&self, &mut F) -> HashMap<usize, usize>
         where F: FnMut(usize) -> usize;
     fn get_shape_handle(&self, usize) -> Option<ShapeHandle2<f64>>;
-    fn parts_changed(&self, &Self) -> HashSet<usize> ;
+    fn parts_changed(&self, &Self) -> HashSet<usize>;
 }
 
 impl UpdateableCollision for Bounds {
@@ -49,10 +49,10 @@ impl UpdateableCollision for Bounds {
         if let &Bounds::Grid { points: _, height: _, width: _ } = self {
             HashSet::new()
         } else {
-             let mut h = HashSet::new();
-             if *self != *old {
+            let mut h = HashSet::new();
+            if *self != *old {
                 h.insert(0);
-             }
+            }
             h
         }
     }
@@ -60,7 +60,7 @@ impl UpdateableCollision for Bounds {
 impl CollisionSystem {
     pub fn new() -> Self {
         let world = CollisionWorld::new(0.02, false);
-        CollisionSystem(world)
+        CollisionSystem(world, IdMap::new())
     }
 }
 
@@ -86,17 +86,20 @@ impl<'a> CollisionSystem {
                       col: &mut WriteStorage<'a, CollisionObjectData>,
                       bounds: &ReadStorage<'a, Bounds>) {
         let world = &mut self.0;
+        let idmap = &mut self.1;
         for (ent, col, bounds) in (&**ent, col, bounds).join() {
-            let id = ent.id() as usize;
-                match &col.current_bounds {
-                    &Some(ref b) => {
-                    for p in bounds.parts_changed(b){
-                            println!("Removing entity {:?}", id);
-                            world.deferred_remove(id);
-                        }
+            let eid = ent.id() as usize;
+            match &col.current_bounds {
+                &Some(ref b) => {
+                    for p in bounds.parts_changed(b) {
+                        let id = idmap.get((eid, p));
+                        println!("Removing entity {:?}", id);
+                        world.deferred_remove(id);
+                        idmap.release((eid,p));
                     }
-                    _ => {}
                 }
+                _ => {}
+            }
         }
         world.update();
     }
@@ -106,10 +109,12 @@ impl<'a> CollisionSystem {
                          col: &mut WriteStorage<'a, CollisionObjectData>,
                          bounds: &ReadStorage<'a, Bounds>) {
         let world = &mut self.0;
+        let idmap = &mut self.1;
         for (ent, pos, col, bounds) in (&**ent, pos, col, bounds).join() {
-            let id = ent.id() as usize;
-            for (&id, &part) in bounds.get_current_part_ids(&mut |x| id).iter() {
+            let eid = ent.id() as usize;
+            for (&id, &part) in bounds.get_current_part_ids(&mut |x| idmap.get((eid, x))).iter() {
                 let p = Isometry2::new(Vector2::new(pos.x, pos.y), na::zero());
+                
                 if let Some(_) = world.collision_object(id) {
                     world.deferred_set_position(id, p)
                 } else {
@@ -178,7 +183,7 @@ impl<'a> CollisionSystem {
                 p2.push([contact.world2[0], contact.world2[1]]);
             }
             if let Some(col) = col.get_mut(e1.data) {
-                if (!p1.is_empty()) {
+                if !p1.is_empty() {
                     println!("e1 contacts {:?}", p1);
                 }
                 col.contacts.insert(e2.data, p1);
@@ -213,7 +218,7 @@ impl<'a> System<'a> for CollisionSystem {
                 dirty = self.basic_physics(&mut pos, &vel);
             }
             {
-                if (i == 0) {
+                if i == 0 {
                     self.update_collision_objects(&mut col)
                 }
             }
