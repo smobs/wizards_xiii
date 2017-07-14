@@ -20,7 +20,7 @@ trait UpdateableCollision {
     fn get_current_part_ids<F>(&self, &mut F) -> HashMap<usize, usize>
         where F: FnMut(usize) -> usize;
     fn get_shape_handle(&self, usize) -> Option<ShapeHandle2<f64>>;
-    fn part_changed(&self, usize, &Self) -> bool;
+    fn parts_changed(&self, &Self) -> HashSet<usize> ;
 }
 
 impl UpdateableCollision for Bounds {
@@ -45,11 +45,15 @@ impl UpdateableCollision for Bounds {
             None
         }
     }
-    fn part_changed(&self, part: usize, old: &Self) -> bool {
+    fn parts_changed(&self, old: &Self) -> HashSet<usize> {
         if let &Bounds::Grid { points: _, height: _, width: _ } = self {
-            false
+            HashSet::new()
         } else {
-            part != 0 && *self != *old
+             let mut h = HashSet::new();
+             if *self != *old {
+                h.insert(0);
+             }
+            h
         }
     }
 }
@@ -84,17 +88,15 @@ impl<'a> CollisionSystem {
         let world = &mut self.0;
         for (ent, col, bounds) in (&**ent, col, bounds).join() {
             let id = ent.id() as usize;
-            for (&id, &part) in bounds.get_current_part_ids(&mut |x| id).iter() {
                 match &col.current_bounds {
                     &Some(ref b) => {
-                        if bounds.part_changed(part, b) {
+                    for p in bounds.parts_changed(b){
                             println!("Removing entity {:?}", id);
                             world.deferred_remove(id);
                         }
                     }
                     _ => {}
                 }
-            }
         }
         world.update();
     }
