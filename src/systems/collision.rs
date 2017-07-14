@@ -16,31 +16,33 @@ use std::collections::HashMap;
 use systems::id_store::*;
 pub struct CollisionSystem(CollisionWorld2<f64, Entity>);
 
-trait UpdateableCollision{
-    fn get_current_part_ids<F>(&self, &mut F) -> HashMap<usize, usize> where F : FnMut(usize) -> usize ;
-    fn get_shape_handle(&self,  usize) -> ShapeHandle2<f64>;
+trait UpdateableCollision {
+    fn get_current_part_ids<F>(&self, &mut F) -> HashMap<usize, usize>
+        where F: FnMut(usize) -> usize;
+    fn get_shape_handle(&self, usize) -> ShapeHandle2<f64>;
     fn part_changed(&self, usize, &Self) -> bool;
 }
 
 impl UpdateableCollision for Bounds {
-    fn get_current_part_ids<F>(&self, get: &mut F) -> HashMap<usize, usize> where F : FnMut(usize) -> usize {
+    fn get_current_part_ids<F>(&self, get: &mut F) -> HashMap<usize, usize>
+        where F: FnMut(usize) -> usize
+    {
         let i = get(0);
         let mut h = HashMap::new();
         h.insert(i, 0);
         h
     }
-    
-    fn get_shape_handle(&self, index : usize) -> ShapeHandle2<f64>{
+
+    fn get_shape_handle(&self, index: usize) -> ShapeHandle2<f64> {
         shape_from_bounds(self)
     }
-    fn part_changed(&self, part: usize, old : &Self) -> bool{
-        if let &Bounds::Grid{points: _, height:_, width: _} = self {
+    fn part_changed(&self, part: usize, old: &Self) -> bool {
+        if let &Bounds::Grid { points: _, height: _, width: _ } = self {
             false
-        }
-        else {
+        } else {
             part != 0 && *self != *old
         }
-    } 
+    }
 }
 impl CollisionSystem {
     pub fn new() -> Self {
@@ -70,7 +72,9 @@ fn shape_from_bounds(bounds: &Bounds) -> ShapeHandle2<f64> {
         &Bounds::Rectangle(x, y) => ShapeHandle::new(create_rectangle(x, y)),
         &Bounds::Circle(r) => ShapeHandle::new(create_circle(r)),
         &Bounds::Polygon(ref ps) => ShapeHandle::new(create_polygon(ps)),
-        &Bounds::Grid { points: ref ps, height: h, width: w } => shape_from_bounds(&Bounds::Rectangle(w as f64, h as f64)),
+        &Bounds::Grid { points: ref ps, height: h, width: w } => {
+            shape_from_bounds(&Bounds::Rectangle(w as f64, h as f64))
+        }
     }
 }
 impl<'a> CollisionSystem {
@@ -81,16 +85,17 @@ impl<'a> CollisionSystem {
         let world = &mut self.0;
         for (ent, col, bounds) in (&**ent, col, bounds).join() {
             let id = ent.id() as usize;
-            for (&id, &part) in bounds.get_current_part_ids(&mut |x|{id}).iter() {
-            match &col.current_bounds {
-                &Some(ref b) => {
-                    if bounds.part_changed(part, b) {
-                        println!("Removing entity {:?}", id);
-                        world.deferred_remove(id);
+            for (&id, &part) in bounds.get_current_part_ids(&mut |x| id).iter() {
+                match &col.current_bounds {
+                    &Some(ref b) => {
+                        if bounds.part_changed(part, b) {
+                            println!("Removing entity {:?}", id);
+                            world.deferred_remove(id);
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
-            }}
+            }
         }
         world.update();
     }
@@ -114,7 +119,7 @@ impl<'a> CollisionSystem {
             }
         }
         world.update();
-    } 
+    }
 
     fn basic_physics(&mut self,
                      pos: &mut WriteStorage<'a, Pos>,
