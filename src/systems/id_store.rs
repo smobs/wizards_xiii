@@ -39,11 +39,11 @@ impl<T> IdMap<T>
         IdMap(IdStore::new(), HashMap::new())
     }
 
-    pub fn get(&mut self, id: T) -> &mut usize {
+    pub fn get(&mut self, id: T) -> usize {
        let m = &mut self.1;
        let s = &mut self.0;
        let i = m.entry(id).or_insert_with(|| {s.get()});
-       i
+       i.clone()
     }
 
     pub fn release(&mut self, id: T) {
