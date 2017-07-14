@@ -38,7 +38,7 @@ impl UpdateableCollision for Bounds {
             false
         }
         else {
-            *self != *old
+            part != 0 && *self != *old
         }
     } 
 }
