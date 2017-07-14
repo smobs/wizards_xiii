@@ -81,15 +81,16 @@ impl<'a> CollisionSystem {
         let world = &mut self.0;
         for (ent, col, bounds) in (&**ent, col, bounds).join() {
             let id = ent.id() as usize;
+            for (&id, &part) in bounds.get_current_part_ids(&mut |x|{id}).iter() {
             match &col.current_bounds {
                 &Some(ref b) => {
-                    if bounds.part_changed(0, b) {
+                    if bounds.part_changed(part, b) {
                         println!("Removing entity {:?}", id);
                         world.deferred_remove(id);
                     }
                 }
                 _ => {}
-            }
+            }}
         }
         world.update();
     }
