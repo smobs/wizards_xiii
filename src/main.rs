@@ -70,12 +70,6 @@ fn draw_bounds(bounds : &Bounds, pos : &Pos, c: Context, g: &mut G2d ) {
 
             polygon([0.0, 1.0, 0.0, 0.5], &ps, c.transform, g)
         }
-        &Bounds::Grid{points: ref ps, height: y, width: x} => {
-           rectangle([1.0, 0.0, 0.0, 1.0],
-                      [pos.x - (x as f64 / 2.0), pos.y - (y as f64 / 2.0), x as f64, y as f64],
-                      c.transform,
-                      g);
-        }
     }
 }
 impl<'a> Game<'a> {

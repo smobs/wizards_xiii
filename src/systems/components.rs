@@ -25,12 +25,7 @@ impl Component for Pos {
 pub enum Bounds {
     Rectangle(f64, f64),
     Circle(f64),
-    Polygon(Box<Vec<[f64; 2]>>),
-    Grid {
-        points: HashSet<[usize; 2]>,
-        height: usize,
-        width: usize,
-    },
+    Polygon(Box<Vec<[f64; 2]>>)
 }
 
 impl Component for Bounds {

@@ -7,10 +7,10 @@ use nalgebra::*;
 pub struct TerrainSystem;
 
 
-fn get_edges(point: &Vector2<f64>, points: &HashSet<[isize; 2]>) -> HashSet<[isize; 2]> {
+fn get_edges(point: &Vector2<f64>, points: &HashSet<[usize; 2]>) -> HashSet<[usize; 2]> {
     let mut neighboughs = HashSet::new();
-    let px = point[0] as isize;
-    let py = point[1] as isize;
+    let px = point[0] as usize;
+    let py = point[1] as usize;
     for p1 in px - 1..px + 2 {
         for p2 in py - 1..py + 2 {
             if !(px == p1 && py == p2) {
@@ -20,7 +20,7 @@ fn get_edges(point: &Vector2<f64>, points: &HashSet<[isize; 2]>) -> HashSet<[isi
     }
     neighboughs.difference(points).cloned().collect()
 }
-fn new_bounds(points: &HashSet<[isize; 2]>) -> Bounds {
+fn new_bounds(points: &HashSet<[usize; 2]>) -> Bounds {
     let mut poly = vec![];
     let mut complete = false;
     let mut start = None;
@@ -125,7 +125,7 @@ impl<'a> System<'a> for TerrainSystem {
             handle_collision(terrain, col);
             if terrain.dirty {
                 println!("Dirty copy");
-                *bounds = Bounds::Grid{points: terrain.points.clone(), width: 700, height: 500};
+                *bounds = new_bounds(&terrain.points);
                 (*terrain).dirty = false; 
             }
         }

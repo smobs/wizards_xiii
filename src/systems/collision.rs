@@ -46,16 +46,9 @@ impl UpdateableCollision for Bounds {
         where F: FnMut(usize) -> usize
     {
         let mut map = HashMap::new();
-        if let &Bounds::Grid { points: ref ps, height: h, width: w } = self {
-            for p in ps {
-                let i = get_point_grid_id(w, h, p[0], p[1]);
-                let id = get(i);
-                map.insert(id, i);
-            }
-        } else {
-            let i = get(0);
-            map.insert(i, 0);
-        }
+        let i = get(0);
+        map.insert(i, 0);
+
         map
     }
 
@@ -64,35 +57,21 @@ impl UpdateableCollision for Bounds {
             &Bounds::Rectangle(x, y) => Some(ShapeHandle::new(create_rectangle(x, y))),
             &Bounds::Circle(r) => Some(ShapeHandle::new(create_circle(r))),
             &Bounds::Polygon(ref ps) => Some(ShapeHandle::new(create_polygon(ps))),
-            &Bounds::Grid { points: ref ps, height: h, width: w } => {
-                if let Some(_) = get_point_from_id(ps, w, h, index) {
-                    Some(ShapeHandle::new(create_rectangle(1.0, 1.0)))
-                } else {
-                    None
-                }
-            }
         }
     }
 
     fn get_position_for_part(&self, index: usize) -> Option<[usize; 2]> {
-        if let &Bounds::Grid { points: ref ps, height: h, width: w } = self {
-            get_point_from_id(ps, w, h, index)
-        } else {
-            Some([0, 0])
-        }
+
+        Some([0, 0])
+
     }
     fn parts_changed(&self, old: &Self) -> HashSet<usize> {
-        if let (&Bounds::Grid { points: ref old_p, height: old_h, width: old_w },
-                &Bounds::Grid { points: ref new_p, height: new_h, width: new_w }) = (old, self) {
-            //old_p.difference(new_p).map(|p| get_point_grid_id(old_w, old_w, p[0], p[1])).collect()
-            HashSet::new()
-        } else {
-            let mut h = HashSet::new();
-            if *self != *old {
-                h.insert(0);
-            }
-            h
+
+        let mut h = HashSet::new();
+        if *self != *old {
+            h.insert(0);
         }
+        h
     }
 }
 impl CollisionSystem {
