@@ -20,59 +20,72 @@ trait UpdateableCollision {
     fn get_current_part_ids<F>(&self, &mut F) -> HashMap<usize, usize>
         where F: FnMut(usize) -> usize;
     fn get_shape_handle(&self, usize) -> Option<ShapeHandle2<f64>>;
-    fn get_position_for_part(&self, usize) -> Option<(f64, f64)>;
+    fn get_position_for_part(&self, usize) -> Option<[usize; 2]>;
     fn parts_changed(&self, &Self) -> HashSet<usize>;
 }
 fn get_point_grid_id(w: usize, h: usize, x: usize, y: usize) -> usize {
     y * w + x
 }
 
-fn get_point_from_id(w: usize, h: usize, id: usize) -> Option<(usize, usize)> {
+fn get_point_from_id(ps: &HashSet<[usize; 2]>,
+                     w: usize,
+                     h: usize,
+                     id: usize)
+                     -> Option<[usize; 2]> {
     if w * h > id {
-        Some((id % w, id / w))
+        let p = [id % w, id / w];
+        if ps.contains(&p) { Some(p) } else { None }
     } else {
         None
     }
 }
+
+
 impl UpdateableCollision for Bounds {
     fn get_current_part_ids<F>(&self, get: &mut F) -> HashMap<usize, usize>
         where F: FnMut(usize) -> usize
     {
-        let i = get(0);
-        let mut h = HashMap::new();
-        h.insert(i, 0);
-        h
+        let mut map = HashMap::new();
+        if let &Bounds::Grid { points: ref ps, height: h, width: w } = self {
+            for p in ps {
+                let i = get_point_grid_id(w, h, p[0], p[1]);
+                let id = get(i);
+                map.insert(id, i);
+            }
+        } else {
+            let i = get(0);
+            map.insert(i, 0);
+        }
+        map
     }
 
     fn get_shape_handle(&self, index: usize) -> Option<ShapeHandle2<f64>> {
-        if index == 0 {
-            match self {
-                &Bounds::Rectangle(x, y) => Some(ShapeHandle::new(create_rectangle(x, y))),
-                &Bounds::Circle(r) => Some(ShapeHandle::new(create_circle(r))),
-                &Bounds::Polygon(ref ps) => Some(ShapeHandle::new(create_polygon(ps))),
-                &Bounds::Grid { points: ref ps, height: h, width: w } => {
-                    if let Some((x, y)) = get_point_from_id(w, h, index) {
-                        if ps.contains(&[x, y]) {
-                            Some(ShapeHandle::new(create_rectangle(1.0, 1.0)))
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
+        match self {
+            &Bounds::Rectangle(x, y) => Some(ShapeHandle::new(create_rectangle(x, y))),
+            &Bounds::Circle(r) => Some(ShapeHandle::new(create_circle(r))),
+            &Bounds::Polygon(ref ps) => Some(ShapeHandle::new(create_polygon(ps))),
+            &Bounds::Grid { points: ref ps, height: h, width: w } => {
+                if let Some(_) = get_point_from_id(ps, w, h, index) {
+                    Some(ShapeHandle::new(create_rectangle(1.0, 1.0)))
+                } else {
+                    None
                 }
             }
-        } else {
-            None
         }
     }
-    fn get_position_for_part(&self, index: usize) -> Option<(f64, f64)> {
-        Some((0.0, 0.0))
+
+    fn get_position_for_part(&self, index: usize) -> Option<[usize; 2]> {
+        if let &Bounds::Grid { points: ref ps, height: h, width: w } = self {
+            get_point_from_id(ps, w, h, index)
+        } else {
+            Some([0, 0])
+        }
     }
     fn parts_changed(&self, old: &Self) -> HashSet<usize> {
         if let (&Bounds::Grid { points: ref old_p, height: old_h, width: old_w },
                 &Bounds::Grid { points: ref new_p, height: new_h, width: new_w }) = (old, self) {
-            old_p.difference(new_p).map(|p| get_point_grid_id(old_w, old_w, p[0], p[1])).collect()
+            //old_p.difference(new_p).map(|p| get_point_grid_id(old_w, old_w, p[0], p[1])).collect()
+            HashSet::new()
         } else {
             let mut h = HashSet::new();
             if *self != *old {
@@ -138,14 +151,18 @@ impl<'a> CollisionSystem {
         for (ent, pos, col, bounds) in (&**ent, pos, col, bounds).join() {
             let eid = ent.id() as usize;
             for (&id, &part) in bounds.get_current_part_ids(&mut |x| idmap.get((eid, x))).iter() {
-                if let Some((px, py)) = bounds.get_position_for_part(part) {
+                if let Some(p) = bounds.get_position_for_part(part) {
                     {
-                        let p = Isometry2::new(Vector2::new(pos.x + px, pos.y + py), na::zero());
+                        let p = Isometry2::new(Vector2::new(pos.x + (p[0] as f64),
+                                                            pos.y + (p[1] as f64)),
+                                               na::zero());
                         if let Some(_) = world.collision_object(id) {
                             world.deferred_set_position(id, p)
                         } else {
                             if let Some(shape) = bounds.get_shape_handle(part) {
                                 let mut cg = CollisionGroups::new();
+                                cg.set_membership(&[col.group_id]);
+                                cg.set_blacklist(&[col.group_id]);
                                 world.deferred_add(id,
                                                    p,
                                                    shape,
